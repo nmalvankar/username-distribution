@@ -1,6 +1,8 @@
 var express = require('express');
 var router = express.Router();
 var config = require('../config');
+const multer = require('multer');
+const redis = require('redis');
 const log = require('barelog')
 const { urlencoded, json } = require('body-parser')
 const users = require('../lib/users')
@@ -9,6 +11,15 @@ const { default: PQueue } = require('p-queue')
 const assigmentQ = new PQueue({
   concurrency: 1
 })
+
+// Configure multer for file uploads
+const upload = multer({ dest: 'uploads/' });
+
+const redisClient = redis.createClient({
+    url: 'redis://localhost:6379' // Replace with your Redis server URL and port
+});
+
+redisClient.connect().catch(err => console.error('Redis connection error:', err));
 
 var title = config.eventTitle;
 var password = config.accounts.password;
@@ -21,6 +32,42 @@ router.get('/request-account', urlencoded(), (req, res) => {
     res.render('request-account', {title: title})
   }
 })
+
+router.post('/upload', upload.single('file'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).send('No file uploaded.');
+    }
+
+    const filePath = path.join(__dirname, 'uploads', req.file.filename);
+
+    try {
+        // Read and parse the CSV file
+        const results = [];
+        fs.createReadStream(filePath)
+            .pipe(csvParser())
+            .on('data', (data) => results.push(data))
+            .on('end', async () => {
+                // Upload data to Redis
+                try {
+                    for (const row of results) {
+                        const { username, password } = row;
+                        await redisClient.set(username, password);
+                    }
+                    res.send('Data loaded successfully into Redis.');
+                } catch (err) {
+                    console.error('Error loading data into Redis:', err);
+                    res.status(500).send('Error loading data into Redis.');
+                } finally {
+                    // Clean up uploaded file
+                    fs.unlinkSync(filePath);
+                }
+            });
+    } catch (err) {
+        console.error('Error processing file:', err);
+        res.status(500).send('Error processing file.');
+    }
+})
+
 
 router.post('/request-account', urlencoded(), (req, res) => {
   if (!req.body.email) {
