@@ -4,16 +4,16 @@ const { randomBytes } = require('crypto')
 const env = require('env-var').from({
   // Default values to use if not defined in the environment
   LAB_SESSION_SECRET: randomBytes(8).toString(),
-  LAB_TITLE: 'OCP4 Workshop',
+  LAB_TITLE: 'OpenShift Space Adventure',
   LAB_DURATION_HOURS: '2h',
   LAB_USER_COUNT: '50',
   LAB_USER_PASS: 'openshift',
   LAB_USER_ACCESS_TOKEN: 'redhatlabs',
   LAB_BLOCKLIST: '',
-  LAB_USER_PREFIX: 'evals',
+  LAB_USER_PREFIX: 'player',
   LAB_USER_PAD_ZERO: 'false',
   LAB_ADMIN_PASS: 'pleasechangethis',
-  LAB_MODULE_URLS: 'https://a.com;Lab 1,https://b.com;Lab 2',
+  LAB_MODULE_URLS: 'https:red.ht/island;OCP Space Adventure',
   LAB_EXTRA_URLS: '',
 
   // If you plan to use redis uncomment and set these,
@@ -28,6 +28,8 @@ const env = require('env-var').from({
 
 module.exports = {
   redis: {
+    // host: 'localhost',//env.get('LAB_REDIS_HOST').asString(),
+    // password: 'mypassword',//env.get('LAB_REDIS_PASS').asString()
     host: env.get('LAB_REDIS_HOST').asString(),
     password: env.get('LAB_REDIS_PASS').asString()
   },
